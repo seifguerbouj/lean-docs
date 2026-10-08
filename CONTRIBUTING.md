@@ -19,3 +19,15 @@ The best bug report is a fixture. Copy an `evals/` folder, put the code that foo
 ## Rules for the skill text
 
 Every line in `SKILL.md` and `reference/` costs tokens in every session that uses it. A new rule should come from a failure you saw, ideally with a fixture that catches it.
+
+## Releasing
+
+The version lives in four places: `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` and `VERSION` in `lean-docs.mjs`. A test fails if they differ, so bump all four by hand rather than with `npm version`. Then:
+
+```bash
+npm test
+git commit -am "lean-docs X.Y.Z" && git tag vX.Y.Z
+git push origin main vX.Y.Z
+git tag -f v0 && git push --force-with-lease origin v0   # the Action's moving 0.x tag
+npm publish --auth-type=web
+```

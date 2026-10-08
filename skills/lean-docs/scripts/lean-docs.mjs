@@ -48,6 +48,9 @@ const PORTABILITY = [
 ];
 
 // ponytail: naive split, "e.g." counts as a break. Errs toward shorter sentences, which is the point.
+// A URL, a URL path (`/items/{id}`) or a status code (`307`) is an address or a value, not a code name.
+const NOT_A_NAME = /^\s*(https?:\/\/\S+|\/[\w.~{}:*\/-]*|\d{3})\s*$/;
+export const VERSION = '0.1.2'; // kept equal to package.json and the plugin manifests by a test
 const sentences = (s) => s.split(/[.!?](?:\s|$)/).map((x) => x.trim()).filter(Boolean);
 const words = (s) => s.split(/\s+/).filter(Boolean).length;
 
@@ -143,8 +146,7 @@ export function check(text, { root, keepShape, file } = {}) {
       const long = sentences(prose.replace(/^\s*([-*]|\d+[.)])\s+/, '')).find((s) => words(s) > MAX_WORDS);
       if (long) add(n, `${words(long)}-word sentence, max ${MAX_WORDS}: split it`);
       // Per sentence, as page.md says: a paragraph is one line, so counting per line punishes paragraphs.
-      // A URL, a URL path (`/items/{id}`) or a status code (`307`) is an address or a value, not a code name.
-      const names = Math.max(0, ...sentences(l.replace(/(`+)([\s\S]*?)\1/g, (m, q, c) => (/^\s*(https?:\/\/\S+|\/[\w.~{}:*\/-]*|\d{3})\s*$/.test(c) ? 'x' : '\u0000'))).map((t) => (t.match(/\u0000/g) || []).length));
+      const names = Math.max(0, ...sentences(l.replace(/(`+)([\s\S]*?)\1/g, (m, q, c) => (NOT_A_NAME.test(c) ? 'x' : '\u0000'))).map((t) => (t.match(/\u0000/g) || []).length));
       if (names > MAX_CODE_NAMES && !keepShape) add(n, `${names} code names in one sentence: say it in words, put the names in "## Code"`); // API guides list names
     }
 
@@ -193,7 +195,7 @@ export function check(text, { root, keepShape, file } = {}) {
     if (lead) {
       const count = sentences(lead.text).length;
       if (count > 2) add(lead.line, `opening is ${count} sentences, max 2`);
-      const names = (lead.text.match(/`[^`]+`/g) || []).length;
+      const names = (lead.text.match(/`[^`]+`/g) || []).filter((m) => !NOT_A_NAME.test(m.slice(1, -1))).length;
       if (names > 1) add(lead.line, `opening has ${names} code names, max 1: say what it does in plain words`);
     } else add(0, 'missing an opening: one or two plain sentences under the title');
     for (const s of REQUIRED) if (!sections.has(s)) add(0, `missing "## ${s[0].toUpperCase() + s.slice(1)}" section`);
@@ -925,6 +927,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.ar
   const fromHere = (p) => relative(cwd, resolve(here, p)).split(sep).join('/');
   const USAGE = 'usage: lean-docs [--oneline]            status of this repo\'s docs (one line for a status line or prompt)\n       lean-docs check [--root .] [--keep-shape] <doc.md>...\n       lean-docs affected [--base <ref>] [--staged [--message <file>]] [--strict]\n       lean-docs coverage [dir] [--min <pct>]\n       lean-docs index [dir]\n       lean-docs wiki [dir] [--out <dir>] [--format markdown|obsidian|notion]\n       lean-docs relink [--record <publish.json>] <file>...';
   if (['--help', '-h', 'help'].includes(args[0])) { console.log(USAGE); process.exit(0); }
+  if (['--version', '-v'].includes(args[0])) { console.log(VERSION); process.exit(0); }
   const oneline = flag('--oneline'); // for status lines and shell prompts
   const known = ['check', 'affected', 'index', 'hook', 'coverage', 'wiki', 'relink'].includes(args[0]);
   // A bare word that isn't a file is a mistyped command (`lean-docs afected`), not a page to check.

@@ -41,7 +41,7 @@ npx lean-docs check --keep-shape README.md         # a guide keeps its own secti
 | `MAX_LINES` | 60 lines | non-blank lines, not counting mermaid blocks or the `Use it` example |
 | `MAX_EXAMPLE` | 15 lines | one code block under `Use it` |
 | `MAX_WORDS` | 30 words | per sentence, outside tables and the Code section |
-| `MAX_CODE_NAMES` | 3 | backticked names in one prose sentence; a backticked URL doesn't count |
+| `MAX_CODE_NAMES` | 3 | backticked names in one prose sentence, and 1 in the opening; URLs, URL paths (`/items/`) and status codes (`307`) don't count |
 
 ## Does not
 - Check paths without `--root`. A typo in a path then passes.

@@ -5,7 +5,7 @@ import { readFileSync, mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { check, codePaths, codeRows, affected, coverage, reviewedIn, sharedWithoutSymbols, parseNameStatus, index, wiki, obsidian, notion, relink, fileUrl, pythonEnclosing } from './lean-docs.mjs';
+import { check, codePaths, codeRows, affected, coverage, reviewedIn, sharedWithoutSymbols, parseNameStatus, index, wiki, obsidian, notion, relink, fileUrl, pythonEnclosing, VERSION } from '../skills/lean-docs/scripts/lean-docs.mjs';
 
 const tail = '\n## Code\n\n- `package.json`\n\n## Does not\n\n- y\n\n## Breaks when\n\n- z\n';
 const ok = '# X\n\nDoes a thing.\n\n## How it works\n\n1. A\n2. B\n' + tail;
@@ -15,7 +15,7 @@ const how = (diagram) => '# X\n\nDoes a thing.\n\n## How it works\n\n```mermaid\
 test('minimal doc passes', () => assert.deepEqual(check(ok), []));
 
 test('examples: before fails, after passes', () => {
-  const dir = new URL('../../../examples/', import.meta.url);
+  const dir = new URL('../examples/', import.meta.url);
   assert.ok(check(readFileSync(new URL('before.md', dir), 'utf8')).length > 20);
   assert.deepEqual(check(readFileSync(new URL('after.md', dir), 'utf8')), []);
 });
@@ -74,7 +74,7 @@ test('frontmatter skipped', () => assert.deepEqual(check('---\ntitle: X\nsidebar
 // staleness
 test('stale path with root', () => {
   assert.match(msgs(ok + '\nIn `nope/missing.ts`.\n', { root: '.' }), /does not exist/);
-  const repo = new URL('../../../', import.meta.url).pathname;
+  const repo = new URL('../', import.meta.url).pathname;
   assert.deepEqual(check(ok + '\nIn `skills/lean-docs/SKILL.md`.\n', { root: repo }), []);
 });
 
@@ -117,7 +117,7 @@ test('CLI affected in a repo with no commits compares against the empty tree', (
   const dir = mkdtempSync(join(tmpdir(), 'lean-docs-unborn-'));
   execFileSync('git', ['init', '-q'], { cwd: dir });
   writeFileSync(join(dir, 'a.ts'), 'v1');
-  const cli = new URL('./lean-docs.mjs', import.meta.url).pathname;
+  const cli = new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname;
   const out = execFileSync('node', [cli, 'affected', '--strict'], { cwd: dir, encoding: 'utf8' });
   assert.equal(out, 'lean-docs: no stale docs (1 changed file, since the empty tree, no commits yet, uncommitted included)\n');
 });
@@ -131,7 +131,7 @@ test('CLI affected + index on a real git repo', () => {
   writeFileSync(join(dir, 'docs/features/a.md'), '# Feature A\n\nDoes A. More.\n\n## Breaks when\n\n- x\n\n## Code\n\n| Where | What |\n|---|---|\n| `src/a.ts` | all |\n| `src/z.ts` | none |\n');
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
   writeFileSync(join(dir, 'src/a.ts'), 'v2');
-  const cli = new URL('./lean-docs.mjs', import.meta.url).pathname;
+  const cli = new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname;
   const out = execFileSync('node', [cli, 'affected'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /docs\/features\/a\.md: code it covers changed \(src\/a\.ts\)/);
   assert.throws(() => execFileSync('node', [cli, 'affected', '--strict'], { cwd: dir, stdio: 'ignore' }));
@@ -290,7 +290,7 @@ test('a change in one Python method only flags the page naming that method', () 
   writeFileSync(join(dir, 'docs/features/get.md'), page('get'));
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
   writeFileSync(join(dir, 'client.py'), `class Client:\n    def send(self):\n${body(1)}\n    def get(self):\n${body(3)}`);
-  const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /get\.md/);
   assert.doesNotMatch(out, /send\.md/);
 });
@@ -306,7 +306,7 @@ test('a change in one TypeScript method only flags the page naming that method',
   for (const sym of ['route', 'fetch', 'create']) writeFileSync(join(dir, `docs/features/${sym}.md`), page(sym));
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
   writeFileSync(join(dir, 'app.ts'), src(2));
-  const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /fetch\.md/);
   assert.doesNotMatch(out, /route\.md|create\.md/);
 });
@@ -321,7 +321,7 @@ test('a change in one Swift method only flags the page naming that method', () =
   for (const sym of ['upload', 'perform', 'retryResult']) writeFileSync(join(dir, `docs/features/${sym}.md`), `# ${sym}\n\n## Code\n\n- \`Session.swift\` \`${sym}\`\n`);
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
   writeFileSync(join(dir, 'Session.swift'), src(2));
-  const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /perform\.md/);
   assert.doesNotMatch(out, /upload\.md|retryResult\.md/);
 });
@@ -336,7 +336,7 @@ test('a change in one Dart method only flags the page naming that method', () =>
   for (const sym of ['upload', 'perform', 'retryResult']) writeFileSync(join(dir, `docs/features/${sym}.md`), `# ${sym}\n\n## Code\n\n- \`session.dart\` \`${sym}\`\n`);
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
   writeFileSync(join(dir, 'session.dart'), src(2));
-  const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /perform\.md/);
   assert.doesNotMatch(out, /upload\.md|retryResult\.md/);
 });
@@ -358,7 +358,7 @@ test('a reformat or a comment edit doesn\'t flag a page, a deprecation or a code
     [src.replace('a + b', 'a - b'), true],
   ]) {
     writeFileSync(join(dir, 'foo.ts'), edit);
-    const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+    const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
     (flagged ? assert.match : assert.doesNotMatch)(out, /foo\.md/, edit);
     if (flagged === 'likely') assert.doesNotMatch(out, /\(check:/, edit);
   }
@@ -373,7 +373,7 @@ test('a statement moved past an unchanged line flags the page', () => {
   writeFileSync(join(dir, 'docs/features/store.md'), '# store\n\n## Code\n\n- `store.js` `store`\n');
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
   writeFileSync(join(dir, 'store.js'), 'export function store(x) {\n  save(x)\n  check(x)\n  return x\n}\n');
-  const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /store\.md/);
 });
 
@@ -392,14 +392,14 @@ test('an edit inside one command of a big main block only flags that command\'s 
   // looks like an arrow to git, so for an edit just below it git's hunk opens at the blank line above `if`.
   for (const i of [at, at + 2, at + 8, at + 9]) {
     writeFileSync(join(dir, 'cli.mjs'), src.map((l, j) => (j === i ? l + ' // x' : l)).join('\n'));
-    const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+    const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
     assert.match(out, /serve\.md/, `line ${i + 1}`);
     assert.doesNotMatch(out, /build\.md|lint\.md/, `line ${i + 1}`);
   }
 });
 
 test('a symbol that is no longer in its file is reported', () => {
-  const repo = new URL('../../../', import.meta.url).pathname;
+  const repo = new URL('../', import.meta.url).pathname;
   const doc = ok + '\n## Code\n\n- `skills/lean-docs/scripts/lean-docs.mjs` `affected`, `notARealFunction`\n';
   const m = msgs(doc.replace('\n## Code\n\n- `package.json`\n', '\n'), { root: repo });
   assert.match(m, /`notARealFunction` isn't in skills\/lean-docs\/scripts\/lean-docs\.mjs/);
@@ -453,7 +453,7 @@ test('non-ASCII file names are tracked', () => {
   writeFileSync(join(dir, 'docs/features/a.md'), '# A\n\n## Code\n\n- `src/café.ts`\n');
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
   writeFileSync(join(dir, 'src/café.ts'), 'v2');
-  const cli = new URL('./lean-docs.mjs', import.meta.url).pathname;
+  const cli = new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname;
   assert.match(execFileSync('node', [cli, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' }), /src\/café\.ts/);
   assert.match(execFileSync('node', [cli, 'coverage'], { cwd: dir, encoding: 'utf8' }), /1 of 1 code file/);
 });
@@ -467,7 +467,7 @@ test('repo-wide commands work from a subfolder', () => {
   writeFileSync(join(dir, 'docs/features/a.md'), '# A\n\nDoes A.\n\n## How it works\n\n1. a\n\n## Does not\n\n- x\n\n## Breaks when\n\n- y\n\n## Code\n\n- `src/a.ts`: all\n');
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
   writeFileSync(join(dir, 'src/a.ts'), 'v2');
-  const cli = new URL('./lean-docs.mjs', import.meta.url).pathname;
+  const cli = new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname;
   const sub = join(dir, 'src');
   assert.match(execFileSync('node', [cli, 'affected', '--base', 'HEAD'], { cwd: sub, encoding: 'utf8' }), /docs\/features\/a\.md/);
   assert.match(execFileSync('node', [cli, '--oneline'], { cwd: sub, encoding: 'utf8' }), /docs 100% · 1 stale/);
@@ -476,7 +476,7 @@ test('repo-wide commands work from a subfolder', () => {
 });
 
 test('relative links that point at nothing are reported', () => {
-  const repo = new URL('../../../', import.meta.url).pathname;
+  const repo = new URL('../', import.meta.url).pathname;
   const file = join(repo, 'docs/reference.md');
   const guide = '# Guide\n\nSee [the README](../README.md) and [gone](missing.md#x), and `[x](../y.md)` in code.\n';
   const m = check(guide, { keepShape: true, root: repo, file }).map((p) => p.msg);
@@ -515,7 +515,7 @@ test('status counts a Sphinx or AsciiDoc site as existing docs', () => {
   writeFileSync(join(dir, 'docs/api.adoc'), '= API\n');
   writeFileSync(join(dir, 'CHANGES.rst'), 'v1\n');
   run('add', '-A');
-  const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /2 other docs found/);
 });
 
@@ -542,7 +542,7 @@ test('a repo whose file list is over 1 MB still works', () => {
   mkdirSync(join(dir, 'src'));
   const long = 'x'.repeat(40);
   for (let i = 0; i < 25000; i++) writeFileSync(join(dir, 'src', `${long}${i}.js`), '');
-  const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname, 'coverage'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, 'coverage'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /0 of 25000 code files/);
 });
 
@@ -557,7 +557,7 @@ test('affected says what it compared when nothing is stale', () => {
   writeFileSync(join(dir, 'a.js'), '1');
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
   writeFileSync(join(dir, 'a.js'), '2');
-  const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /^lean-docs: no stale docs \(1 changed file, since HEAD, uncommitted included\)/);
 });
 
@@ -578,14 +578,14 @@ test('a top-level change is not pinned on the function above it', () => {
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
   writeFileSync(join(dir, 'x.go'), go(2));
   writeFileSync(join(dir, 'cli.py'), py(2));
-  const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /limit\.md/);
   assert.match(out, /file\.md/);
   assert.doesNotMatch(out, /\/a\.md|main\.md/);
 });
 
 test('CLI: a mistyped command prints usage, help is -h', () => {
-  const cli = new URL('./lean-docs.mjs', import.meta.url).pathname;
+  const cli = new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname;
   const typo = spawnSync('node', [cli, 'afected'], { cwd: tmpdir(), encoding: 'utf8' });
   assert.equal(typo.status, 1);
   assert.match(typo.stderr, /unknown command 'afected'\nusage:/);
@@ -599,7 +599,7 @@ test('CLI: a typo fails instead of passing CI', () => {
   mkdirSync(join(dir, 'src')); mkdirSync(join(dir, 'docs'));
   writeFileSync(join(dir, 'src/a.ts'), 'v1'); writeFileSync(join(dir, 'docs/x.md'), '# X\n');
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
-  const cli = new URL('./lean-docs.mjs', import.meta.url).pathname;
+  const cli = new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname;
   const lean = (...a) => spawnSync('node', [cli, ...a], { cwd: dir, encoding: 'utf8' });
   for (const [a, msg] of [[['coverage', '--json'], /unknown option --json\nusage:/], [['affected', '--strict', '--bse', 'HEAD'], /unknown option --bse/],
     [['check', '--keepshape', 'docs/x.md'], /unknown option --keepshape/], [['coverage', 'nosuchdir', '--min', '70'], /no such folder: nosuchdir/], [['index', 'nosuchdir'], /no such folder: nosuchdir/]]) {
@@ -625,7 +625,7 @@ test('a lean-docs-code line ties a guide to its code, outside code fences only',
     { path: 'src/lib/', symbols: [], marker: true },
   ]);
   // Not a page: no section demands with --keep-shape, but a path that isn't there is stale.
-  const repo = new URL('../../../', import.meta.url).pathname;
+  const repo = new URL('../', import.meta.url).pathname;
   const marked = (p) => `[//]: # (lean-docs-code: ${p} affected)\n# Guide\n\n## Install\n\nRun it.\n`;
   assert.deepEqual(check(marked('skills/lean-docs/scripts/lean-docs.mjs'), { root: repo, keepShape: true }), []);
   assert.match(msgs(marked('src/gone.mjs'), { root: repo, keepShape: true }), /`src\/gone\.mjs` in the lean-docs-code line does not exist/);
@@ -641,7 +641,7 @@ test('affected flags a guide carrying a lean-docs-code line when its symbol chan
   writeFileSync(join(dir, 'config.py'), src(1, 1));
   writeFileSync(join(dir, 'docs/advanced/timeouts.md'), '[//]: # (lean-docs-code: config.py Timeout)\n# Timeouts\n\n## Setting a timeout\n\nPass `timeout=`.\n');
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
-  const cli = new URL('./lean-docs.mjs', import.meta.url).pathname;
+  const cli = new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname;
   const affectedOut = () => execFileSync('node', [cli, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
   writeFileSync(join(dir, 'config.py'), src(1, 2));
   assert.doesNotMatch(affectedOut(), /timeouts\.md/);
@@ -683,7 +683,7 @@ test('wiki CLI writes the pages and pages.json; the overview keeps its own shape
   mkdirSync(join(dir, 'docs/features'), { recursive: true });
   writeFileSync(join(dir, 'docs/features/a.md'), ok);
   writeFileSync(join(dir, 'docs/features/overview.md'), '# Shop\n\nSells things.\n\n## Areas\n\n- **Core**: [X](a.md)\n');
-  const cli = new URL('./lean-docs.mjs', import.meta.url).pathname;
+  const cli = new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname;
   assert.match(execFileSync('node', [cli, 'wiki'], { cwd: dir, encoding: 'utf8' }), /5 pages in \.lean-docs\/wiki/);
   const tree = JSON.parse(readFileSync(join(dir, '.lean-docs/wiki/pages.json'), 'utf8'));
   assert.deepEqual(tree.map((p) => [p.file, p.parent]), [['overview.md', null], ['area-core.md', 'overview.md'], ['a.md', 'area-core.md'], ['glossary.md', 'overview.md'], ['troubleshooting.md', 'overview.md']]);
@@ -747,7 +747,7 @@ test('affected names the owner; status says when the published wiki is behind', 
   writeFileSync(join(dir, 'docs/features/a.md'), ok.replace('- `package.json`', '- `src/a.js`'));
   writeFileSync(join(dir, 'docs/features/overview.md'), '# Shop\n\nSells.\n\n## Areas\n\n- **Core** (owner: Jana): [X](a.md)\n');
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
-  const cli = new URL('./lean-docs.mjs', import.meta.url).pathname;
+  const cli = new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname;
   writeFileSync(join(dir, 'src/a.js'), '2');
   assert.match(execFileSync('node', [cli, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' }), /^docs\/features\/a\.md \(owner: Jana\): code it covers changed/);
   execFileSync('node', [cli, 'wiki'], { cwd: dir });
@@ -782,7 +782,7 @@ test('python: an example def inside a docstring does not steal the edit from the
   writeFileSync(join(dir, 'docs/features/other.md'), page('other'));
   run('add', '-A'); run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base');
   writeFileSync(join(dir, 'routing.py'), src(2));
-  const out = execFileSync('node', [new URL('./lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, 'affected', '--base', 'HEAD'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /include\.md/);
   assert.doesNotMatch(out, /other\.md/);
 });
@@ -813,4 +813,17 @@ test('python: an edit to a multi-line signature, such as its return type, belong
   for (const line of [3, 6, 7]) assert.equal(pythonEnclosing(src, line), '    def include_router(', `line ${line}`);
   assert.equal(pythonEnclosing(src, 9), '    def include_router(');
   assert.equal(pythonEnclosing(src, 1), 'class APIRouter:');
+});
+
+test('one version everywhere: the CLI, package.json and both plugin manifests', () => {
+  const read = (f) => JSON.parse(readFileSync(new URL(`../${f}`, import.meta.url), 'utf8'));
+  assert.equal(read('package.json').version, VERSION);
+  assert.equal(read('.claude-plugin/plugin.json').version, VERSION);
+  assert.equal(read('.claude-plugin/marketplace.json').plugins[0].version, VERSION);
+  assert.equal(execFileSync('node', [new URL('../skills/lean-docs/scripts/lean-docs.mjs', import.meta.url).pathname, '--version'], { encoding: 'utf8' }).trim(), VERSION);
+});
+
+test('the opening may hold URL paths and status codes; they are not code names', () => {
+  assert.doesNotMatch(msgs('# X\n\nA request to `/items/` gets `307` from `fetchItems`.\n\n## How it works\n\n1. A\n2. B\n' + tail), /opening has/);
+  assert.match(msgs('# X\n\nCalls `a` and `b`.\n\n## How it works\n\n1. A\n2. B\n' + tail), /opening has 2 code names/);
 });

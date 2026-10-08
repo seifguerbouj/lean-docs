@@ -60,6 +60,7 @@ git commit -m "Rename send" -m "lean-docs-ok: docs/features/send.md"   # still r
 - Trust git's function finder in Python. git also takes a `def` inside a docstring's example code as a function. So lean-docs finds the enclosing `def` or `class` itself, skipping strings and brackets. A multi-line signature counts as part of its function, and each block ends at the next statement indented no deeper. On FastAPI's source it credits every code line to the same function or class as Python's own parser.
 - Count a change to a code file that only re-indents, re-wraps or edits comments, unless a changed line mentions deprecation (`@deprecated`). In Python a changed indent still counts. A statement moved past an unchanged line counts, since the hunk's code is compared before and after with its context lines.
 - Look at trailers outside base..HEAD. A trailer on a commit already on main doesn't count.
+- Report a page you're still editing. A page changed in the same diff as its code counts as updated, even before you commit it. Commit the page with the code, or check it after.
 - Fail without `--strict`. It prints the list and exits 0.
 - Leave out who to ask. If `overview.md` gives the page's area an owner, the line names them: `docs/features/x.md (owner: Jana): ...`.
 - Stay silent when nothing is stale. It prints one line with the number of changed files and the base it compared against.

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2 (2026-10-08)
+
+- `lean-docs --version`.
+- The plugin manifests carry the package version; a test keeps the four version fields equal.
+- A page's opening may name URL paths and status codes (`/items/`, `307`) without counting them as code names.
+- The unit tests moved to `test/`, so `npx skills add` no longer copies them into your project.
+- Docs: a page edited in the same diff as its code counts as updated, even before it's committed.
+
 ## 0.1.1 (2026-10-08)
 
 - A clearer npm description and keywords. No code changes.

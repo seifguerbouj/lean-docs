@@ -1,6 +1,6 @@
 {
   "name": "lean-docs",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "One-page feature docs a new teammate reads in about 3 minutes, with a diagram, and every claim checked against the code.",
   "author": {
     "name": "Seif Guerbouj"
