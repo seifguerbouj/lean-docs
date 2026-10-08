@@ -1,6 +1,6 @@
 {
   "name": "lean-docs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Your docs are lying. One-page feature docs with diagrams, checked against your code, kept true in CI, and shared as a wiki. A skill and plugin for Claude Code and Codex, plus a CLI with no AI.",
   "type": "module",
   "bin": {
