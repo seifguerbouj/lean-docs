@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.1 (2026-10-08)
+
+- A clearer npm description and keywords. No code changes.
+
+## 0.1.0 (2026-10-08)
 
 The first release.
 
