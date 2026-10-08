@@ -1,0 +1,19 @@
+# pre-commit hooks (https://pre-commit.com). In your .pre-commit-config.yaml:
+#   - repo: https://github.com/seifguerbouj/lean-docs
+#     rev: v0
+#     hooks: [{ id: lean-docs-check }, { id: lean-docs-stale }]
+# lean-docs-stale runs at commit-msg time: install it with `pre-commit install --hook-type commit-msg`.
+- id: lean-docs-check
+  name: lean-docs check (feature pages)
+  description: Lint feature pages for shape, readability, bloat, portability and stale paths.
+  entry: lean-docs check --root .
+  language: node
+  files: ^docs/features/.*\.mdx?$
+  exclude: (^|/)README\.md$
+- id: lean-docs-stale
+  name: lean-docs stale docs
+  description: Block a commit that changes code a page covers without the page, unless the message says "lean-docs-ok:".
+  entry: lean-docs affected --staged --strict --message
+  language: node
+  stages: [commit-msg]
+  always_run: true

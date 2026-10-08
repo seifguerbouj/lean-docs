@@ -1,0 +1,8 @@
+# = path: the graded doc must be this file (edit in place, no new page)
+= docs/features/rate-limit.md
++ \b100\b
++ RATE_LIMIT_ANON_PER_MIN
++ \b10\b
++ (IP|address)
+- not limited
+- \b60 requests

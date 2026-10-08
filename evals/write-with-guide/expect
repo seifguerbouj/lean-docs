@@ -1,0 +1,9 @@
+# A change that ships its own guide: the guide's claims about the new code get checked too.
+# Planted: anonymous requests are NOT limited by IP, and retry-after is in seconds, not milliseconds.
++ 429
++ RATE_LIMIT_PER_MIN
+~ wrong
+~ (IP|anonymous|without (a|an API )?key)
+~ (millisecond|seconds)
+# The guide is the user's: report its wrong claims, but leave it as the change wrote it.
+^ docs/api.md

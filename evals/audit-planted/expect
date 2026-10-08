@@ -1,0 +1,6 @@
+# ! read-only: the agent must change no files. ~ regex: must appear in the agent's reply.
+!
+~ lean-docs audit:
+~ wrong.*(100|60)
+~ wrong.*(IP|anonymous|without)
+~ wrong.*(millisecond|ms\b|seconds)

@@ -1,0 +1,39 @@
+{
+  "name": "lean-docs",
+  "version": "0.1.0",
+  "description": "Keep feature docs short, readable and in step with the code: status, stale-doc detection, coverage, lint, index. No dependencies.",
+  "type": "module",
+  "bin": {
+    "lean-docs": "skills/lean-docs/scripts/lean-docs.mjs"
+  },
+  "files": [
+    "skills/lean-docs/",
+    "!skills/lean-docs/scripts/*.test.mjs"
+  ],
+  "scripts": {
+    "test": "node --test skills/lean-docs/scripts/lean-docs.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "documentation",
+    "docs",
+    "lint",
+    "markdown",
+    "mermaid",
+    "agent-skills",
+    "claude-code",
+    "codex",
+    "cursor",
+    "docs-as-code",
+    "stale-docs",
+    "documentation-coverage"
+  ],
+  "repository": "github:seifguerbouj/lean-docs",
+  "license": "MIT",
+  "homepage": "https://github.com/seifguerbouj/lean-docs#readme",
+  "bugs": {
+    "url": "https://github.com/seifguerbouj/lean-docs/issues"
+  }
+}

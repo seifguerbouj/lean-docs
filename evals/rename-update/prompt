@@ -1,0 +1,1 @@
+I moved the rate limiter to src/limits/rate.js. Update the docs.

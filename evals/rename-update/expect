@@ -1,0 +1,4 @@
+# the page is edited in place, points at the new path, and no longer at the old one
+= docs/features/rate-limit.md
++ src/limits/rate\.js
+- `src/rateLimit\.js`

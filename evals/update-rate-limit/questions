@@ -1,0 +1,4 @@
+What is the default limit for a request with an API key?	\b100\b
+Are requests without an API key limited, and how?	IP|address|10
+Which env var sets the limit for anonymous requests?	RATE_LIMIT_ANON_PER_MIN
+We run 3 instances. Is the limit shared across them?	\bno\b|not shared|each|per (process|instance)

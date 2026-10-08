@@ -1,0 +1,11 @@
+# + regex: must appear in the doc. - regex: must not. Case-insensitive, grep -E.
++ 429
++ retry-after
++ RATE_LIMIT_PER_MIN
++ \b60\b
++ x-api-key
++ (memory|restart|instance|process)
++ (anonymous|without .*key|no .*key|missing .*key)
+- redis
+- (token bucket|sliding window|leaky bucket)
++ ^## use it

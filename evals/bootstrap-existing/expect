@@ -1,0 +1,9 @@
+# ^ path: must be unchanged. ~ regex: must appear in the agent's reply.
+^ docs/GUIDE.md
+% 80
+~ wrong.*(GUIDE|100|401)
++ \b60\b
++ 429
++ 10,?000
+- 100 requests
+- (key|keys) are rejected with 401

@@ -1,0 +1,16 @@
+{
+  "name": "lean-docs",
+  "owner": {
+    "name": "Seif Guerbouj"
+  },
+  "plugins": [
+    {
+      "name": "lean-docs",
+      "source": "./",
+      "description": "One-page feature docs a new teammate reads in about 3 minutes, with a diagram, and every claim checked against the code.",
+      "version": "0.1.0",
+      "category": "documentation"
+    }
+  ],
+  "description": "One-page feature docs your team can read, with diagrams, checked against the code."
+}

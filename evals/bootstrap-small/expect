@@ -1,0 +1,8 @@
+# % N: lean-docs coverage must reach N percent
+% 80
++ 429
++ RATE_LIMIT_PER_MIN
++ 413
++ EXPORT_MAX_ROWS
++ UTC
+- redis

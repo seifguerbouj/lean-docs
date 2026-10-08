@@ -1,0 +1,6 @@
+What does a user see when too many invoices match their filters?	Too many invoices
+What timezone are the dates in the file?	UTC
+Is a copy of the export emailed to anyone?	\bno\b|not|never
+What is the most rows one export can contain, by default?	10,?000
+How do I change that maximum?	EXPORT_MAX_ROWS
+Which file would I open to change the CSV columns?	export\.ts

@@ -1,0 +1,6 @@
+What HTTP status does a client get when it goes over the limit?	429
+How does a client know how long to wait before retrying?	retry-after
+Are requests without an API key rate limited?	\bno\b|not (rate.)?limited|unlimited|pass
+We run 3 instances of the server. Roughly how many requests per minute can one key make in total?	180|3 ?(x|×|times)
+How do I raise the limit to 100 per minute?	RATE_LIMIT_PER_MIN
+Does the limit survive a server restart?	\bno\b|reset|lost|does not|doesn.t

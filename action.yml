@@ -1,0 +1,99 @@
+name: lean-docs
+description: On every PR, lint feature docs, list the docs the change made stale, and report docs coverage in one PR comment and the job summary.
+branding: { icon: file-text, color: green }
+inputs:
+  paths:
+    description: Docs to lint (globs are expanded by the shell). Empty skips linting.
+    default: docs/features/*.md
+  args:
+    description: Extra lint flags, e.g. --keep-shape
+    default: ''
+  fail-on-stale:
+    description: Fail when code changed but a doc that covers it did not
+    default: 'true'
+  min-coverage:
+    description: Fail when docs coverage is below this percent (0 never fails)
+    default: '0'
+  comment:
+    description: "Post the report as one PR comment when there is something to fix, updated on each push. Needs permissions: pull-requests: write."
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with: { node-version: 20 }
+    - shell: bash
+      env:
+        BASE_REF: ${{ github.base_ref }}
+        PATHS: ${{ inputs.paths }}
+        ARGS: ${{ inputs.args }}
+        FAIL_ON_STALE: ${{ inputs.fail-on-stale }}
+        MIN_COVERAGE: ${{ inputs.min-coverage }}
+        COMMENT: ${{ inputs.comment }}
+        PR: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        cli() { node "$GITHUB_ACTION_PATH/skills/lean-docs/scripts/lean-docs.mjs" "$@"; }
+        status=0
+        # PRs compare against the target branch. That needs history: actions/checkout with fetch-depth: 0.
+        # A shallow checkout hides the PR's commits, and so their lean-docs-ok lines: fetch the rest.
+        base=()
+        if [ -n "$BASE_REF" ]; then
+          deepen=(); [ "$(git rev-parse --is-shallow-repository)" = true ] && deepen=(--unshallow)
+          git fetch -q "${deepen[@]}" origin "$BASE_REF" || true; base=(--base "origin/$BASE_REF")
+        fi
+
+        # A failed comparison must never read as "no stale docs".
+        stale_err=""
+        stale=$(cli affected "${base[@]}" 2>&1) || { stale_err=$stale; stale=""; status=1; }
+        stale=$(echo "$stale" | grep ': code it covers changed' || true) # the stale lines only, not the "no stale docs" note
+        below=""; coverage=$(cli coverage --min "$MIN_COVERAGE") || { status=1; below=", below the $MIN_COVERAGE% minimum"; }
+        # Pages this change updated: a doc with a Code table among the changed files.
+        updated=""
+        if [ -n "$BASE_REF" ]; then
+          while IFS= read -r f; do
+            [ -f "$f" ] && grep -qE '^##[[:space:]]+[Cc]ode[[:space:]]*$' "$f" && updated="$updated\`$f\` "
+          done < <(git -c core.quotePath=false diff --name-only "origin/$BASE_REF"...HEAD -- '*.md' '*.mdx' 2>/dev/null)
+        fi
+        lint=""
+        # A repo with no docs yet lints nothing instead of failing on an unmatched glob.
+        shopt -s nullglob; files=($PATHS); shopt -u nullglob
+        if [ ${#files[@]} -gt 0 ]; then lint=$(cli check --root . $ARGS "${files[@]}") || status=1; fi
+        if [ -n "$stale" ] && [ "$FAIL_ON_STALE" = "true" ]; then status=1; fi
+
+        report=$(mktemp)
+        {
+          echo "## lean-docs"
+          if [ -n "$stale_err" ]; then
+            echo "**Couldn't check for stale docs:** $stale_err"
+            echo; echo "Check out full history (\`actions/checkout\` with \`fetch-depth: 0\`) so the target branch can be compared."
+          elif [ -n "$stale" ]; then
+            echo "**Docs this change made stale.** The code they cover changed, the doc didn't:"
+            echo; echo "$stale" | sed 's/^/- /'
+            echo; echo "Update them, or if one is still right, add \`lean-docs-ok: <doc>\` to a commit message." 
+          else
+            echo "No stale docs: every doc covering changed code was updated."
+          fi
+          if [ -n "$updated" ]; then echo; echo "**Docs updated in this change:** $updated"; fi
+          echo; echo "**Coverage:** $(echo "$coverage" | head -1)$below"
+          gaps=$(echo "$coverage" | tail -n +3 | head -5)
+          if [ -n "$gaps" ]; then echo; echo "Biggest gaps:"; echo '```'; echo "$gaps"; echo '```'; fi
+          problems=$(echo "$lint" | grep -v ': ok$' || true)
+          if [ -n "$problems" ]; then echo; echo "**Lint problems:**"; echo '```'; echo "$problems"; echo '```'; fi
+        } > "$report"
+        cat "$report" >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"
+
+        # One sticky comment per PR, found by its marker and edited in place, so pushes don't stack comments.
+        # A failed comment (fork PRs, read-only token) is a notice, never a failed job.
+        if [ "$COMMENT" = "true" ] && [ -n "$PR" ]; then
+          marker='<!-- lean-docs -->'
+          body="$marker"$'\n'"$(cat "$report")"
+          {
+            id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -1)
+            if [ -n "$id" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$id" -f body="$body" > /dev/null
+            # A clean PR gets no new comment; one that had problems keeps its comment, updated to say they're fixed.
+            elif [ $status -ne 0 ] || [ -n "$stale" ]; then gh api "repos/$REPO/issues/$PR/comments" -f body="$body" > /dev/null; fi
+          } || echo "::notice::lean-docs couldn't comment on the PR. Give the job permissions: pull-requests: write, or set comment: false."
+        fi
+        exit $status

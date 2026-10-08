@@ -1,0 +1,1 @@
+Change the default rate limit from 60 to 100 requests per minute. Keep the change minimal: a one-line edit in src/rateLimit.js.

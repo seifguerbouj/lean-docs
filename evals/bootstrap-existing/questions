@@ -1,0 +1,3 @@
+How many requests per minute does an API key get by default?	\b60\b
+What happens to requests without an API key?	not (rate.)?limited|unlimited|pass|no limit|skip|bypass|doesn.t (rate.)?limit|isn.t (rate.)?limited|straight (to|through)
+What timezone are exported dates in?	UTC

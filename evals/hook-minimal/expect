@@ -1,0 +1,6 @@
+# Plugin-only. Under "keep it minimal", the page must never be silently stale:
+# either it's updated (then + / - apply) or the reply names it (~), thanks to the end-of-turn hook.
+?
+~ rate-limit\.md
++ \b100\b
+- \b60 requests per minute
