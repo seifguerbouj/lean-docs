@@ -8,7 +8,7 @@
       "name": "lean-docs",
       "source": "./",
       "description": "One-page feature docs a new teammate reads in about 3 minutes, with a diagram, and every claim checked against the code.",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "category": "documentation"
     }
   ],

@@ -50,7 +50,7 @@ const PORTABILITY = [
 // ponytail: naive split, "e.g." counts as a break. Errs toward shorter sentences, which is the point.
 // A URL, a URL path (`/items/{id}`) or a status code (`307`) is an address or a value, not a code name.
 const NOT_A_NAME = /^\s*(https?:\/\/\S+|\/[\w.~{}:*\/-]*|\d{3})\s*$/;
-export const VERSION = '0.1.2'; // kept equal to package.json and the plugin manifests by a test
+export const VERSION = '0.1.3'; // kept equal to package.json and the plugin manifests by a test
 const sentences = (s) => s.split(/[.!?](?:\s|$)/).map((x) => x.trim()).filter(Boolean);
 const words = (s) => s.split(/\s+/).filter(Boolean).length;
 
@@ -334,7 +334,7 @@ const defines = (diff, sym, fromWhat) => {
 };
 
 // A flag is likely real when the changed lines share a camelCase or snake_case name, a string or a number
-// of 2+ digits with the page outside its Code section; otherwise it is a "check". On 30 Cobra commits the
+// of 2+ digits with the page outside its Code section; otherwise it is a "check". On 30 commits to a Go library the
 // likely ones were 11 real of 22 and the checks 2 of 45. Both still count as stale.
 // ponytail: a word match, not a parser; plain lowercase names (`args`, `path`) match prose, so they don't count.
 // A changed line that mentions deprecation (`@deprecated use y`) is likely too: readers need it, and it rarely shares a name.
@@ -649,7 +649,7 @@ const NOT_CODE = /(^|\/)(tests?|Tests|Examples?|__\w+__|specs?|evals?|docs|docs_
 
 // How much of the code some doc's Code table covers, and the folders with the most uncovered files.
 export function coverage(files, docs) {
-  // A Docusaurus site in a subfolder (tRPC's www/) is the docs site's own code, not the product.
+  // A Docusaurus site in a subfolder (a www/ folder) is the docs site's own code, not the product.
   const sites = files.flatMap((f) => f.match(/^(.+\/)docusaurus\.config\.\w+$/)?.[1] ?? []);
   const code = files.filter((f) => CODE.test(f) && !NOT_CODE.test(f) && !sites.some((s) => f.startsWith(s)));
   const isCovered = (f) => docs.some((d) => d.paths.some((p) => covers(p, f)));

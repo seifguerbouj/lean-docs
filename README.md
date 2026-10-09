@@ -2,66 +2,94 @@
 
 **Your docs are lying. lean-docs finds where, then writes the page that doesn't.**
 
-lean-docs is a skill for Claude Code, Codex, Cursor and any agent that reads `SKILL.md` (tested with Claude Code and Codex). It checks every claim in your docs against the code. It writes one page per feature for a new teammate: about 650 words with a diagram, a 3-minute read. And it tells you which docs went stale when the code changed.
+Short docs that match your code: your coding agent writes them, a free script keeps them true.
 
-![lean-docs auditing httpx's docs, documenting Hono from scratch, then catching and fixing a page a code change made wrong](assets/demo.svg)
+[![npm](https://img.shields.io/npm/v/lean-docs)](https://www.npmjs.com/package/lean-docs) [![CI](https://github.com/seifguerbouj/lean-docs/actions/workflows/test.yml/badge.svg)](https://github.com/seifguerbouj/lean-docs/actions/workflows/test.yml) [![MIT license](https://img.shields.io/npm/l/lean-docs)](LICENSE)
+
+lean-docs is a plugin for Claude Code and Codex, and a skill for any agent that reads `SKILL.md` (tested with Claude Code and Codex). It writes one page per feature for a new teammate: about 650 words with a diagram, a 3-minute read. It checks every claim in your docs against the code. And it tells you which docs went stale when the code changed, in CI, with no AI.
+
+![lean-docs on a small example repo: the agent writes a page, the end-of-turn hook flags it after a code change, the agent fixes one row, CI fails then passes](assets/demo.gif)
+
+| | Agent (the plugin or skill) | Script (`npx lean-docs`) |
+|---|---|---|
+| **Uses AI?** | Yes: your Claude Code or Codex, on your subscription | **No, and no tokens** |
+| **Runs** | Inside Claude Code, Codex or another agent | Anywhere Node 18+ runs: a terminal, CI, a pre-commit hook |
+| **Does** | Writes pages, checks claims against the code, fixes stale lines, rewrites pages for the wiki | Finds stale pages, lints, measures coverage, builds the wiki view |
+
+## Quickstart (60 seconds)
+
+1. **Install** in Claude Code:
+
+   ```
+   /plugin marketplace add seifguerbouj/lean-docs
+   /plugin install lean-docs@lean-docs
+   ```
+
+   Shortcut on Claude Code 2.1.275 or later: `/plugin install lean-docs --marketplace seifguerbouj/lean-docs`. Codex and other agents: see [Install](#install).
+2. **Look** at your docs, with no AI: `npx lean-docs` (or `/lean-docs:coverage`). It shows how many pages you have, how much code they cover, what's stale, and where the gaps are.
+3. **Check** what you already have: `/lean-docs:audit docs/`. It's read-only and lists the claims the code contradicts.
+4. **Fill the gaps:** `/lean-docs:bootstrap` writes the first batch of pages for the biggest gaps.
+5. **Keep them true:** add the GitHub Action ([In CI](#in-ci)), so every PR names the pages it made stale.
+
+Without the plugin, say the same things in words: "docs coverage", "are these docs still right?", "document this repo".
+
 
 ## Install
 
-```bash
-npx skills add seifguerbouj/lean-docs
-```
-
-That copies the skill into your project: `.claude/skills/lean-docs/` for Claude Code, `.agents/skills/lean-docs/` for Codex (pick with `-a claude-code` or `-a codex`). The CLI also offers other agents that read `SKILL.md`, such as GitHub Copilot and Zed; those are untested.
-
-Or as a Claude Code plugin, which adds the end-of-turn hook and five commands (`/lean-docs:doc`, `/lean-docs:audit`, `/lean-docs:bootstrap`, `/lean-docs:coverage`, `/lean-docs:publish`):
+**Claude Code** (adds five commands, `/lean-docs:doc`, `/lean-docs:audit`, `/lean-docs:bootstrap`, `/lean-docs:coverage`, `/lean-docs:publish`, and the end-of-turn hook):
 
 ```
 /plugin marketplace add seifguerbouj/lean-docs
 /plugin install lean-docs@lean-docs
 ```
 
-Or as a Codex plugin:
+Shortcut on Claude Code 2.1.275 or later: `/plugin install lean-docs --marketplace seifguerbouj/lean-docs`.
+
+**Codex:**
 
 ```bash
 codex plugin marketplace add seifguerbouj/lean-docs
 codex plugin add lean-docs@lean-docs
 ```
 
+**Any other agent** (just the skill):
+
+```bash
+npx skills add seifguerbouj/lean-docs
+```
+
+That copies the skill into your project (`.claude/skills/` or `.agents/skills/`). The CLI also offers other agents that read `SKILL.md`, such as GitHub Copilot and Zed; those are untested.
+
 ### What runs where
 
-lean-docs has two parts:
+The table above is the whole picture. The skill brings its own copy of the script and runs it for the mechanical steps, so inside an agent you need nothing else. `npx lean-docs` runs the same script without an agent, for CI, pre-commit hooks, a teammate's terminal or a status line. It can tell you which page a change made stale and who owns it. Writing or fixing the page takes the agent.
 
-| Part | Where it runs | Uses AI? | What it does |
-|---|---|---|---|
-| **The skill** (plugin or `skills add`) | inside Claude Code, Codex or another agent | yes, your agent and your subscription | writes pages, checks claims against the code, rewrites pages for the wiki |
-| **The script** (`lean-docs.mjs`) | anywhere Node 18+ runs | no, and it costs no tokens | finds stale pages, lints, measures coverage, builds the wiki view |
+## Results on real projects
 
-The skill brings its own copy of the script and runs it for the mechanical steps, so inside an agent you need nothing else. `npx lean-docs` runs the same script without an agent, for CI, pre-commit hooks, a teammate's terminal or a status line. It can tell you which page a change made stale and who owns it. Writing or fixing the page takes the agent.
+Run on Python (including a Django app), TypeScript (including a pnpm monorepo and a Next.js app), Go, Rust, Java, Kotlin, Swift, Dart, C, C++, C#, Ruby (a Rails app) and PHP. Docs drift in every project, including very well-run ones. These are single runs, each checked against the code of the version it ran on.
 
-## Tested on real projects
-
-Python (including a Django app), TypeScript (including a pnpm monorepo and a Next.js app), Go, Rust, Java, Kotlin, Swift, Dart, C, C++, C#, Ruby (a Rails app) and PHP. Every finding below was checked by hand against the project's code; clone the commit and see for yourself.
-
-| Project | What lean-docs did | What it found |
+| What lean-docs ran on | What it did | What it found |
 |---|---|---|
-| [httpx](https://github.com/encode/httpx) `b5addb6` | audited all of `docs/`: 23 pages, about 400 claims, 2 min 32 s, $1.53 | 20 wrong. `httpx.Mounts` doesn't exist, and the API reference lists `Response.next()` and `URL.authority`, which don't either. |
-| [axios](https://github.com/axios/axios) `2b169bb` | audited `README.md` | 26 wrong. `headers.setContentEncoding()` is in the README and the types, but throws at runtime. |
-| [FastAPI](https://github.com/fastapi/fastapi) `4b3949c` | **doc this feature** on native OpenTelemetry, a 5,251-line change | [This page](examples/fastapi-opentelemetry.md), unedited, in 69 s for $0.69. Two readers given only the page scored 6/7 and 5.5/7 on 7 questions written from the code (2026-10-08). Both caught that gRPC and a missing SDK extra fail at startup. Both said the per-signal export URL isn't in the page. |
-| [Cobra](https://github.com/spf13/cobra) `adbc881` (Go) | **document this repo** | 12 pages, coverage 0% → 100%, $3.36. Cobra's own site says to call `SetHelpCommandGroupId()`; it's `SetHelpCommandGroupID`, so the example doesn't compile. |
-| [Gson](https://github.com/google/gson) `845664b` (Java) | **document this repo** | 18 pages in under 6 minutes for $6.86, coverage 0% → 83%, all 18 diagrams parse. Gson's user guide says inner classes can't be serialized by default; `serializeInnerClasses` defaults to `true`. |
-| Hono, Flask, Cobra and Campfire (Ruby), their generated pages | **keeping them true**: five code changes, four of them real fixes reverted | `affected` named the right page every time, with no AI. Once it also named a neighbouring page, which the agent checked and left alone. In a Rails model, a page naming `memberships` also matched an edit that only calls it. On 30 ordinary Hono commits it raised 9 flags, 4 of them real; the other 5 were comment, type or small-detail edits. On 30 Cobra commits, under pages covering all its code, it missed no stale page; 13 of its 67 flags were real. **doc this feature** fixed only the untrue lines, in under 40 s for under $0.45. |
-| Hono and Flask, 46 generated pages | **audit of lean-docs' own output** | About 98% right: 26 of about 1,220 claims wrong. 11 of 12 Hono examples type-check and run. [How accurate it is](docs/reference.md#how-accurate-it-is). |
+| A Python HTTP client library | audited all of `docs/`: 23 pages, about 400 claims, 2 min 32 s, $1.53 | 20 claims that no longer match the code. |
+| A JavaScript HTTP client library | audited its `README.md` | 26 claims that no longer match the code. |
+| A Python API framework | **doc this feature** on native OpenTelemetry, a 5,251-line change | A page was written from it, unedited, in 69 s for $0.69. Two readers given only the page scored 6/7 and 5.5/7 on 7 questions written from the code (2026-10-08). Both caught that gRPC and a missing SDK extra fail at startup. Both said the per-signal export URL isn't in the page. |
+| A Go command-line library | **document this repo** | 12 pages, coverage 0% → 100%, $3.36. |
+| A Java JSON library | **document this repo** | 18 pages in under 6 minutes for $6.86, coverage 0% → 83%, all 18 diagrams parse. |
+| Generated pages for a TypeScript web framework, a Python web framework, the Go library and a Ruby on Rails app | **keeping them true**: five code changes replayed, four of them real fixes reverted | `affected` named the right page every time, with no AI. **doc this feature** then fixed only the untrue lines, in under 40 s for under $0.45. On 30 ordinary commits each for the TypeScript framework and the Go library it missed no stale page, and it also flagged pages that needed no edit ([Known limitations](#known-limitations)). |
+| 46 generated pages for the TypeScript and Python web frameworks | **audit of lean-docs' own output** | About 98% right: 26 of about 1,220 claims wrong. 11 of 12 TypeScript examples type-check and run. [How accurate it is](docs/reference.md#how-accurate-it-is). |
 
-[More results](docs/reference.md#more-results): Flask, Hono, ripgrep, FluentValidation, Moshi, Alamofire, hiredis and umami bootstraps, Guzzle (PHP) and FastAPI audits, and a tRPC change whose own guide was wrong. Also an httpx bootstrap and trim, a private app with a few hundred source files, and a Vite page it found accurate.
+[More results](docs/reference.md#more-results): bootstraps and audits on more open-source projects, and a change in a TypeScript RPC library that shipped with its own guide.
 
-![Real audits of httpx, axios and FastAPI next to a page lean-docs wrote from one axios commit](assets/hero.png)
+A real page lean-docs wrote on a small demo repo: [examples/rate-limiter.md](examples/rate-limiter.md).
+
+![A page lean-docs wrote for a small example repo: a diagram, the cut list and a "Breaks when" table](assets/page-example.png)
+
 
 ## What you get
 
 - **One page that explains.** A plain-language opening and a mermaid diagram of how it works, error path included. Then the common call, what it *doesn't* do, and a symptom → cause → check table for when it breaks. The shape follows [Google's and GitLab's doc practices](docs/reference.md#why-this-shape).
 - **Docs that are true.** Every claim is checked against the code, and code examples are claims too. "Are these docs still right?" is a read-only audit that ranks the wrong claims by danger. When a change ships its own guide, "doc this feature" checks that guide too.
-- **Docs that stay true.** Each page lists the files it covers, down to the functions when a big file is shared. `npx lean-docs affected` tells you which docs a change made stale, and the GitHub Action says so in a PR comment. It needs no AI and takes 0.09 s on axios. Docs you already have, like a README or a tutorial, can be tracked too: one hidden line, `[//]: # (lean-docs-code: src/client.py send)`, ties them to the code without changing them. Docs with neither a Code table nor that line aren't tracked.
+- **Docs that stay true.** Each page lists the files it covers, down to the functions when a big file is shared. `npx lean-docs affected` tells you which docs a change made stale, and the GitHub Action says so in a PR comment. It needs no AI and takes 0.09 s on a mid-sized JavaScript library. Docs you already have, like a README or a tutorial, can be tracked too: one hidden line, `[//]: # (lean-docs-code: src/client.py send)`, ties them to the code without changing them. Docs with neither a Code table nor that line aren't tracked.
 - **A wiki for everyone else.** The same pages, rebuilt for people who don't read code and published to Confluence, Notion or a docs site. See [Share with your team](#share-with-your-team).
 
 ## How docs grow
@@ -84,25 +112,18 @@ flowchart LR
 
 ## How it compares
 
+As of October 2026, from each tool's public docs. These tools change, so check theirs.
+
 | | lean-docs | DeepWiki | Mintlify | "Hey agent, write docs" |
 |---|---|---|---|---|
 | Where docs live | Your repo, plain markdown | deepwiki.com (hosted) | A hosted docs site, built from MDX in your repo | Your repo |
 | Checks claims against the code | Yes: audit marks `wrong` and `code?` | Chat answers cite the code | Its agent can run scheduled audits | If you ask. Just as accurate in [our test](docs/reference.md#how-accurate-it-is) |
 | Fails a PR when a doc goes stale | Yes, free script | No | No: its agent opens a docs PR after code merges | No |
-| Works inside your coding agent | Claude Code and Codex (tested), any SKILL.md agent | Read-only, through MCP | A skill and MCP for writing its pages | Yes |
+| Works inside your coding agent | Claude Code and Codex (tested); other SKILL.md agents, untested | Read-only, through MCP | A skill and MCP for writing its pages | Yes |
 | Keeps each page short and readable | Yes, linted | Generated wiki | Your own format | No: twice the words, no diagrams |
 | Price | Free, MIT. You pay your agent's tokens | Free for public repos; private through Devin | Free starter plan; automations on paid plans | Tokens |
 
-Use DeepWiki to explore a repo you don't own. Use Mintlify for a hosted public docs site. Use lean-docs to keep your own repo's docs short and true, inside the agent you already code with. We asked a reader 15 questions from httpx, Cobra and Gson issues, giving it only one doc. It averaged 11.75 right from lean-docs pages and 5.25 from the projects' own doc sections, which are half as long ([test](docs/reference.md#how-accurate-it-is)).
-
-## Your first 5 minutes
-
-1. `npx lean-docs`, or `/lean-docs:coverage` in Claude Code, shows how many pages you have, how much code they cover, what's stale, and where the gaps are.
-2. `/lean-docs:audit docs/` (read-only) shows which existing docs are wrong.
-3. `/lean-docs:bootstrap` writes the first batch of pages for the biggest gaps.
-4. Add the GitHub Action ([In CI](#in-ci)), so every PR keeps them true.
-
-With `npx skills add`, say the same things in words: "docs coverage", "are these docs still right?", "document this repo".
+Use DeepWiki to explore a repo you don't own. Use Mintlify for a hosted public docs site. Use lean-docs to keep your own repo's docs short and true, inside the agent you already code with.
 
 ## Use
 
@@ -172,9 +193,28 @@ steps:
 
 If a change didn't make a doc wrong (a rename, a refactor), add `lean-docs-ok: docs/features/x.md` to a commit message and the check passes. A PR with something to fix gets one comment, edited on each push. It lists the docs the PR made stale, the pages it updated, the coverage and its biggest gaps, and any lint problems. The same checks run locally with `npx lean-docs affected`, `npx lean-docs coverage` and `npx lean-docs check`, or as [pre-commit hooks](docs/reference.md#docs-that-keep-up-with-the-code). They need no AI and cost no tokens.
 
+## Known limitations
+
+- **Single runs.** The results above are one run each on the projects named, not benchmarks. Costs and times vary with the repo and the agent.
+- **Agents.** Tested with Claude Code and Codex. Other agents that read `SKILL.md` may work; they are untested.
+- **Confluence.** Publishing is a preview. It was tried on Notion, Obsidian, plain folders and a stand-in for the Confluence connector, not on a live Confluence space.
+- **`affected` favours not missing a page over precision.** On 30 commits to a Go library it missed no stale page, but 13 of its 67 flags were real; the rest were pages that needed no edit. `lean-docs-ok:` in a commit message clears a flag.
+- **Tracking needs a link to the code.** A page is tracked only if it has a Code table or a `lean-docs-code` line. Other docs aren't tracked.
+- **Audits aren't proofs.** Pages the agent writes are about 98% right on our audits, so run "are these docs still right?" on generated pages too. `code?` and `unver` mark what it couldn't settle.
+
+## Roadmap
+
+No dates. These are directions, not promises.
+
+- Try publishing on a live Confluence space and fix what turns up.
+- Test more agents that read `SKILL.md`.
+- Make `affected` flag fewer pages that need no edit.
+
+Ideas and bug reports are welcome: [open an issue](https://github.com/seifguerbouj/lean-docs/issues/new/choose).
+
 ## More
 
-This repo documents itself with lean-docs: [`docs/features/`](docs/features/README.md), checked by its own Action on every PR. [`docs/reference.md`](docs/reference.md) has the page shape, every CLI command, the linter rules, measured costs, where the output renders, and how it's tested. [`examples/`](examples/) has real pages written from [axios](examples/axios-sensitive-headers.md) and [FastAPI](examples/fastapi-opentelemetry.md) commits.
+This repo documents itself with lean-docs: [`docs/features/`](docs/features/README.md), checked by its own Action on every PR. [`docs/reference.md`](docs/reference.md) has the page shape, every CLI command, the linter rules, measured costs, where the output renders, and how it's tested. [`examples/`](examples/) has a real page lean-docs wrote on a small demo repo, [`rate-limiter.md`](examples/rate-limiter.md), unedited, and a bloated agent doc next to [its lean rewrite](examples/after.md).
 
 ## License
 

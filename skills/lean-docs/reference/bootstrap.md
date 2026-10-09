@@ -63,9 +63,9 @@ A feature is something a user or caller can do, or a part of the system with one
 ```
 lean-docs bootstrap: docs/features/   9 pages, coverage 0% → 78%, 3 old claims wrong
 
-page   Sending requests            httpx/_client.py, _api.py, _models.py
-page   Timeouts                    httpx/_config.py, _transports/default.py
+page   Sending requests            mylib/_client.py, _api.py, _models.py
+page   Timeouts                    mylib/_config.py, _transports/default.py
 ...
 wrong  docs/GUIDE.md:212  "retries 3 times"   retry.py:14 retries 5 times
-next   httpx/_urlparse.py, httpx/_multipart.py   (6 files, no docs yet)
+next   mylib/_urlparse.py, mylib/_multipart.py   (6 files, no docs yet)
 ```

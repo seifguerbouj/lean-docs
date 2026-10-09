@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.3 (2026-10-09)
+
+Docs and repo files only. No code changes.
+
+- README: a new top (what it is in one sentence, badges, a demo GIF, an agent vs script table, a 60-second quickstart), "Results on real projects", a "Known limitations" section and a short roadmap. The install order is Claude Code plugin, then Codex, then `npx skills add`.
+- Results and the reference page describe other projects' docs neutrally ("claims that no longer match the code") and no longer list their individual mismatches.
+- The social preview and the README images are new, from a small example repo, and name no other project. The old dark hero image and the terminal SVG builders are gone.
+- `docs/features/agent-modes.md` lists the install paths in the same order and all five commands.
+- Added `CODE_OF_CONDUCT.md`, a pull request template, and a private security-report link in the issue chooser.
+
 ## 0.1.2 (2026-10-08)
 
 - `lean-docs --version`.

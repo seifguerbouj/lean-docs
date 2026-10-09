@@ -84,7 +84,7 @@ test('keep-shape allows site features and API name lists', () => {
   assert.match(msgs(guide + '\nA robust thing.\n', { keepShape: true }), /filler/);
 });
 test('bare < or { outside backticks is flagged (MDX fails on it), code spans are fine', () => {
-  // The two real lines: gson code-shrinking.md, httpx sending-requests.md
+  // The two real lines: a Java library's code-shrinking.md, a Python library's sending-requests.md
   assert.match(msgs(ok + '\n| x | "new TypeToken<...>() {}" | y |\n| a | b | c |\n'), /bare < or \{/);
   assert.match(msgs(ok + '\nIt warns "cookies=<...> is deprecated".\n'), /bare < or \{/);
   assert.deepEqual(check(ok + '\nUse `List<T>` and `{}` when a < b.\n'), []);

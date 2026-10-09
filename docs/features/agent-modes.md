@@ -33,9 +33,10 @@ flowchart TD
 ## Config
 | Setting | Default | What it changes |
 |---|---|---|
-| `/lean-docs:doc`, `:bootstrap`, `:audit`, `:coverage` | plugin only | slash commands that load the skill and run one mode |
-| Install | `npx skills add seifguerbouj/lean-docs` | skill only, no hook and no commands |
-| Plugin | `/plugin install lean-docs@lean-docs` | skill, commands and the end-of-turn hook |
+| `/lean-docs:doc`, `:bootstrap`, `:audit`, `:coverage`, `:publish` | Claude Code plugin only | slash commands that load the skill and run one mode |
+| Claude Code plugin | `/plugin marketplace add seifguerbouj/lean-docs`, then `/plugin install lean-docs@lean-docs` (on 2.1.275 or later, one step: `/plugin install lean-docs --marketplace seifguerbouj/lean-docs`) | skill, five commands and the end-of-turn hook |
+| Codex plugin | `codex plugin marketplace add seifguerbouj/lean-docs`, then `codex plugin add lean-docs@lean-docs` | the skill; the end-of-turn hook is Claude Code only |
+| Skill only, for other agents | `npx skills add seifguerbouj/lean-docs` | skill only, no hook and no commands |
 
 ## Does not
 - Edit anything in audit mode. It only reports.
@@ -52,7 +53,7 @@ flowchart TD
 | A page claims something the code doesn't do | the agent wrote from memory or old docs | run audit mode on it |
 | The diagram shows as code in Confluence | it was published as mermaid to a space without a Mermaid app | `publish.md` step 4 |
 | A new page is missing from the MkDocs or Docusaurus menu, or its diagram shows as code | the site has an explicit `nav:` or sidebar, or no mermaid fence | step 4 of `write.md` |
-| The commands are missing | installed as a skill, not as a plugin | install with `/plugin install lean-docs@lean-docs` |
+| The commands are missing | installed as a skill, not as a plugin | install the plugin: `/plugin marketplace add seifguerbouj/lean-docs`, then `/plugin install lean-docs@lean-docs` |
 
 ## Code
 | Where | What |

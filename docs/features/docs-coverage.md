@@ -36,8 +36,8 @@ npx lean-docs coverage packages/api --min 70
 | `--min <pct>` | 0 % | exit 1 when coverage rounds below this |
 
 ## Does not
-- Count tests, docs, examples, evals, fixtures, vendored or compiled code, minified files, build output, migrations, generated code, dot-folders, dotfile configs such as `.eslintrc.js`, or `__name__` folders such as `__mocks__`. .NET test projects such as App.Tests and SwiftPM `Tests/` and `Example/` folders count as tests and examples, and so does a C `test.c` suite. Django's `tests.py` and `test.py` count as tests too. A `bundled/` folder, such as the fmt copy spdlog ships, counts as vendored code. Dart-style `example_dart/` and `dio_test/` folders count as examples and tests. Icon components generated into an `svg/` folder count as generated code.
-- Count a Docusaurus site in a subfolder: anything next to or under a non-root `docusaurus.config.*`, such as tRPC's `www/`, is the docs site's own code.
+- Count tests, docs, examples, evals, fixtures, vendored or compiled code, minified files, build output, migrations, generated code, dot-folders, dotfile configs such as `.eslintrc.js`, or `__name__` folders such as `__mocks__`. .NET test projects such as App.Tests and SwiftPM `Tests/` and `Example/` folders count as tests and examples, and so does a C `test.c` suite. Django's `tests.py` and `test.py` count as tests too. A `bundled/` folder, such as a bundled formatting library, counts as vendored code. Dart-style `example_dart/` and `dio_test/` folders count as examples and tests. Icon components generated into an `svg/` folder count as generated code.
+- Count a Docusaurus site in a subfolder: anything next to or under a non-root `docusaurus.config.*`, such as a `www/` folder, is the docs site's own code.
 - Count a top-level `scripts/` folder. It is treated as tooling, but a nested one like `skills/x/scripts/` counts.
 - Count config, markdown, YAML or shell files. Only the source extensions in `CODE` count.
 - Look at what a doc says. A file listed in any Code table counts as covered. When pages name only some of a file's functions, it still counts, and the output says how many files are covered only in part.
